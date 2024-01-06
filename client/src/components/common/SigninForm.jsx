@@ -14,11 +14,14 @@ const SigninForm = ({ switchAuthState }) => {
 
   const [isLoginRequest, setIsLoginRequest] = useState(false);
   const [errorMessage, setErrorMessage] = useState();
+  const [isDemo, setIsDemo] = useState(false);
+  const [username, setUsername] = useState("ritxsshh");
+  const [password, setPassword] = useState("12345678");
 
   const signinForm = useFormik({
     initialValues: {
       password: "",
-      username: ""
+      username: "",
     },
     validationSchema: Yup.object({
       username: Yup.string()
@@ -26,9 +29,9 @@ const SigninForm = ({ switchAuthState }) => {
         .required("username is required"),
       password: Yup.string()
         .min(8, "password minimum 8 characters")
-        .required("password is required")
+        .required("password is required"),
     }),
-    onSubmit: async values => {
+    onSubmit: async (values) => {
       setErrorMessage(undefined);
       setIsLoginRequest(true);
       console.log("asdasdasdasd");
@@ -43,32 +46,58 @@ const SigninForm = ({ switchAuthState }) => {
       }
 
       if (err) setErrorMessage(err.message);
-    }
+    },
   });
 
+  const submitDemo = async (e) => {
+    e.preventDefault();
+    const { response, err } = await userApi.signin({ username, password });
+    setIsLoginRequest(false);
+
+    if (response) {
+      signinForm.resetForm();
+      dispatch(setUser(response));
+      dispatch(setAuthModalOpen(false));
+      toast.success("Sign in success");
+    }
+
+    if (err) setErrorMessage(err.message);
+  };
+
   return (
-    <Box component="form" onSubmit={signinForm.handleSubmit}>
+    <Box
+      component="form"
+      onSubmit={isDemo ? submitDemo : signinForm.handleSubmit}
+    >
       <Stack spacing={3}>
         <TextField
+          id="username"
           type="text"
           placeholder="username"
           name="username"
           fullWidth
-          value={signinForm.values.username}
+          value={isDemo ? username : signinForm.values.username}
           onChange={signinForm.handleChange}
           color="success"
-          error={signinForm.touched.username && signinForm.errors.username !== undefined}
+          error={
+            signinForm.touched.username &&
+            signinForm.errors.username !== undefined
+          }
           helperText={signinForm.touched.username && signinForm.errors.username}
         />
         <TextField
+          id="password"
           type="password"
           placeholder="password"
           name="password"
           fullWidth
-          value={signinForm.values.password}
+          value={isDemo ? password : signinForm.values.password}
           onChange={signinForm.handleChange}
           color="success"
-          error={signinForm.touched.password && signinForm.errors.password !== undefined}
+          error={
+            signinForm.touched.password &&
+            signinForm.errors.password !== undefined
+          }
           helperText={signinForm.touched.password && signinForm.errors.password}
         />
       </Stack>
@@ -84,17 +113,30 @@ const SigninForm = ({ switchAuthState }) => {
         sign in
       </LoadingButton>
 
-      <Button
-        fullWidth
-        sx={{ marginTop: 1 }}
-        onClick={() => switchAuthState()}
-      >
+      <Button fullWidth sx={{ marginTop: 1 }} onClick={() => switchAuthState()}>
         sign up
       </Button>
-
+      {!isDemo && (
+        <>
+          <h2 style={{ margin: "1rem 0", color: "white", textAlign: "center" }}>
+            OR
+          </h2>
+          <Button
+            variant="outlined"
+            sx={{ width: "100%" }}
+            onClick={(e) => {
+              setIsDemo(true);
+            }}
+          >
+            Use Demo Account
+          </Button>
+        </>
+      )}
       {errorMessage && (
         <Box sx={{ marginTop: 2 }}>
-          <Alert severity="error" variant="outlined" >{errorMessage}</Alert>
+          <Alert severity="error" variant="outlined">
+            {errorMessage}
+          </Alert>
         </Box>
       )}
     </Box>
